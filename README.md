@@ -10,7 +10,7 @@ It's a single web page with no account, no server and no tracking. It works offl
 
 ## Features
 
-- **Progressive mode.** Letters unlock in order of how often they're used in the chosen language. A letter counts as mastered when its most recent 30 presses are at least 95% accurate and at or under your target speed. Once every unlocked letter is mastered, the next one unlocks. The target speed is yours to set, in words per minute.
+- **Progressive mode.** Letters unlock in order of how often they're used in the chosen language. A letter counts as mastered when its most recent 30 presses are at least 95% accurate and at or under your target speed. Once every unlocked letter is mastered, the next one unlocks. The target speed is yours to set, in words per minute, and each language keeps its own.
 - **Practice aimed at weak letters.** Words containing your newest letter, or letters not yet at target, come up more often.
 - **Real words first.** The texts use about 17,000 common words per language, 2–7 letters long, filtered to remove names, places, abbreviations and offensive words.
 - **Made-up words that follow the spelling rules.** When your letters can't make enough real words, made-up words fill the gap. They follow each language's spelling rules: no tripled letters, only the double letters the language really uses, Russian жи-ши and ча-ща, Ukrainian ь only after д т з с ц л н, and so on.

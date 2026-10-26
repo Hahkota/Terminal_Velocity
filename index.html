@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-KPWVTp9m84B2pDuNemMwUPjDS+U+QJUkyR+NlR2Tjws=' 'sha256-VVbHMs+REuqlGSdMOo4xXq2qSKdrl3Aq8ig9ggFgB+w=' 'sha256-wLgjWqmmRYIpMoeCXeiKOvwsaQUEYk4M+1Cu+QhMnFI=' 'sha256-F01UQNINv7v9eff/RZhSxS6HvP5CvHdzltGZwagTkQs='; style-src 'sha256-LQ0gIIJCeHwbk9anyPaKz1gGR33GNs8en96oF/dIUWU='; font-src data:; img-src 'self' data:; manifest-src 'self'; worker-src 'self'; connect-src 'self'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-KPWVTp9m84B2pDuNemMwUPjDS+U+QJUkyR+NlR2Tjws=' 'sha256-VVbHMs+REuqlGSdMOo4xXq2qSKdrl3Aq8ig9ggFgB+w=' 'sha256-QqqLHesCVGsXF9s45moAyKpxgBDBG3FjfYJ07yucuYU=' 'sha256-F01UQNINv7v9eff/RZhSxS6HvP5CvHdzltGZwagTkQs='; style-src 'sha256-LQ0gIIJCeHwbk9anyPaKz1gGR33GNs8en96oF/dIUWU='; font-src data:; img-src 'self' data:; manifest-src 'self'; worker-src 'self'; connect-src 'self'; base-uri 'none'; form-action 'none'">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="description" content="Terminal Velocity: a touch-typing trainer for English, Ukrainian and Russian.">
 <meta name="robots" content="noindex, nofollow">
@@ -323,7 +323,7 @@
   <section class="prog" id="progPanel" aria-label="Progressive letters, in order of English frequency" hidden>
     <div class="chips" id="chips"></div>
     <div class="progctl">
-      <label>Target speed <input id="target" type="number" min="5" max="200" step="1"> wpm</label>
+      <label title="Each language keeps its own target speed">Target speed <input id="target" type="number" min="5" max="200" step="1"> wpm</label>
       <button id="resetProg" class="quiet" type="button">Restart from 6 letters</button>
     </div>
   </section>
@@ -420,6 +420,8 @@ window.FLT_WORDS = "aback abacus abandon abate abated abates abating abbey abbey
   // progress, custom letters and best speed are kept separately for each language
   function U() { return store.prog.unlocked[store.prog.lang] || START_LETTERS; }
   function setU(n) { store.prog.unlocked[store.prog.lang] = n; }
+  function T() { return store.prog.wpm[store.prog.lang]; }          // target speed (wpm) for the current language
+  function setT(n) { store.prog.wpm[store.prog.lang] = n; }
   function C() { return store.prog.custom[store.prog.lang] || ""; }
   function B() { return store.best[store.prog.lang] || 0; }
   // per-key statistics, kept per language (Russian and Ukrainian share most letters)
@@ -482,9 +484,10 @@ window.FLT_WORDS = "aback abacus abandon abate abated abates abating abbey abbey
       prog: { mode: p.mode === "custom" || p.mode === "word" ? p.mode : "prog",
               lang: LANG_ORDER.indexOf(p.lang) >= 0 ? p.lang : "en",
               layout: p.layout === "system" ? "system" : "qwerty",
-              wpm: num(p.wpm == null ? DEFAULT_WPM : p.wpm, 5, 200, true),
+              wpm: {},
               drills: p.drills === true, unlocked: {}, custom: {} } };
     var best = typeof s.best === "number" ? { en: s.best } : obj(s.best);            // older saves: one English best
+    var wpm = typeof p.wpm === "number" ? { en: p.wpm, uk: p.wpm, ru: p.wpm } : obj(p.wpm);   // older saves: one target for every language
     var unlocked = typeof p.unlocked === "number" ? { en: p.unlocked } : obj(p.unlocked);
     var custom = typeof p.custom === "string" ? { en: p.custom } : obj(p.custom);
     LANG_ORDER.forEach(function (id) {
@@ -505,6 +508,7 @@ window.FLT_WORDS = "aback abacus abandon abate abated abates abating abbey abbey
       out.best[id] = num(best[id], 0, 1000, true);
       var lv = obj(obj(s.levels)[id]);
       out.levels[id] = { tests: num(lv.tests, 0, 1e7, true), ms: num(lv.ms, 0, 1e13) };
+      out.prog.wpm[id] = num(wpm[id] == null ? DEFAULT_WPM : wpm[id], 5, 200, true);
       out.prog.unlocked[id] = num(unlocked[id] == null ? START_LETTERS : unlocked[id], START_LETTERS, LANGS[id].freq.length, true);
       var c = typeof custom[id] === "string" ? custom[id] : "", seen = {};
       var okCustom = c.length === 4 && c.split("").every(function (ch) { var fresh = !seen[ch]; seen[ch] = 1; return fresh && abc.indexOf(ch) >= 0; });
@@ -973,7 +977,7 @@ window.FLT_WORDS = "aback abacus abandon abate abated abates abating abbey abbey
   }
 
   // ---- progressive mode ----
-  function targetMs() { return 60000 / (store.prog.wpm * 5); }
+  function targetMs() { return 60000 / (T() * 5); }
 
   // status of each unlocked letter against the unlock rules, using its recent presses
   function progStatus() {
@@ -1038,7 +1042,7 @@ window.FLT_WORDS = "aback abacus abandon abate abated abates abating abbey abbey
       msg.textContent = "";
     } else if (prog) {
       letters = L().freq.slice(0, U()).split("");
-      targetIn.value = store.prog.wpm;
+      targetIn.value = T();
       prepareWords(focusLetters());
       renderProg();
       msg.textContent = "";
@@ -1163,8 +1167,8 @@ window.FLT_WORDS = "aback abacus abandon abate abated abates abating abbey abbey
   });
   targetIn.addEventListener("change", function () {
     var v = Math.round(Number(targetIn.value));
-    if (!(v >= 5 && v <= 200)) { targetIn.value = store.prog.wpm; return; }
-    store.prog.wpm = v;
+    if (!(v >= 5 && v <= 200)) { targetIn.value = T(); return; }
+    setT(v);
     saveStore();
     applyMode();
     targetIn.blur();
