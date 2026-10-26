@@ -1,7 +1,7 @@
 // Terminal Velocity offline helper. Keeps a copy of the app so it works without internet.
 // The page itself is always fetched fresh when online (so updates arrive straight away) and the saved copy is
 // used only when offline. Nothing is ever sent anywhere: it only handles requests for this app's own files.
-const VERSION = "terminal-velocity-20b49dea4908";
+const VERSION = "terminal-velocity-568d9511e059";
 const FILES = ["./", "index.html", "manifest.webmanifest", "icons/icon.svg", "icons/icon-192.png", "icons/icon-512.png", "icons/icon-maskable-512.png", "icons/apple-touch-icon.png", "icons/favicon-32.png"];
 
 self.addEventListener("install", (event) => {

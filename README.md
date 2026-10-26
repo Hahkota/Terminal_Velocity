@@ -22,6 +22,7 @@ It's a single web page with no account, no server and no tracking. It works offl
 - **On-screen keyboard** for Ukrainian and Russian. It highlights the next key to press and dims letters you haven't unlocked yet.
 - **Physical keyboard support.** With **Standard** keyboard selected, your keys are read as QWERTY for English and ЙЦУКЕН for Ukrainian or Russian, so you don't need to install another keyboard layout. **Match my system layout** uses whatever your computer types instead.
 - **Export and import progress** to a file, for backups or moving to another computer.
+- **Intro screen.** The first time you open it each session, green digital rain falls, then fades back while a greeting types itself out. Press **Enter** to start typing, or **Esc** or **Skip** to go straight in. If your computer is set to reduce motion, the greeting appears straight away without the animation.
 - **A smooth gliding caret** that fits the height of the letters, and blinks at the end of a test.
 
 ## Languages
@@ -38,6 +39,7 @@ Each language keeps its own progress, statistics, level and best speed.
 
 | Keys | Action |
 |---|---|
+| Enter | Leave the intro screen and start typing (Esc skips it) |
 | Tab | New text with the same letters |
 | Backspace | Fix a mistake |
 | Ctrl + Backspace | Delete back to the start of the word |
