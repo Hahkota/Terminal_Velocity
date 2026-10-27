@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-KPWVTp9m84B2pDuNemMwUPjDS+U+QJUkyR+NlR2Tjws=' 'sha256-VVbHMs+REuqlGSdMOo4xXq2qSKdrl3Aq8ig9ggFgB+w=' 'sha256-QqqLHesCVGsXF9s45moAyKpxgBDBG3FjfYJ07yucuYU=' 'sha256-F01UQNINv7v9eff/RZhSxS6HvP5CvHdzltGZwagTkQs='; style-src 'sha256-LQ0gIIJCeHwbk9anyPaKz1gGR33GNs8en96oF/dIUWU='; font-src data:; img-src 'self' data:; manifest-src 'self'; worker-src 'self'; connect-src 'self'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-KPWVTp9m84B2pDuNemMwUPjDS+U+QJUkyR+NlR2Tjws=' 'sha256-VVbHMs+REuqlGSdMOo4xXq2qSKdrl3Aq8ig9ggFgB+w=' 'sha256-bAmkf6KTprUj2zuwTBENN4/cPX0dnFjv3bP+C1qQy2c=' 'sha256-F01UQNINv7v9eff/RZhSxS6HvP5CvHdzltGZwagTkQs='; style-src 'sha256-Bm10Sh1fBeJY7xNMkEqtzkvEv6FCcB3dx3VzHSNM9M4='; font-src data:; img-src 'self' data:; manifest-src 'self'; worker-src 'self'; connect-src 'self'; base-uri 'none'; form-action 'none'">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="description" content="Terminal Velocity: a touch-typing trainer for English, Ukrainian and Russian.">
 <meta name="robots" content="noindex, nofollow">
@@ -144,6 +144,8 @@
   .vk.next { background: var(--hot); color: var(--bg); opacity: 1; font-weight: 600; box-shadow: 0 0 12px var(--main); }
   .vk.bump::after { content: ""; position: absolute; bottom: 5px; width: 9px; height: 2px; border-radius: 1px; background: currentColor; opacity: .6; }
   .vk.space { width: 230px; }
+  .vk.shift { width: 45px; font-size: .62rem; }
+  .vk.shift.right { width: 82px; }
 
   /* key statistics */
   .keypanel h2 { font-size: .72rem; font-weight: 400; color: var(--sub); margin: 0 0 10px; }
@@ -308,10 +310,12 @@
         <option value="ru" lang="ru">Русский</option>
       </select>
     </label>
-    <label class="opt">Keyboard
+    <label class="opt" title="Add capital letters and punctuation marks to the text, in any mode">
+      <input type="checkbox" id="punct"> Punctuation</label>
+    <label class="opt" title="QWERTY or ЙЦУКЕН: your keys are read as that layout, so you don't need to install it. System: uses whatever your computer's keyboard layout types.">Keyboard
       <select id="layout">
-        <option value="qwerty" id="stdOpt" selected>Standard (QWERTY)</option>
-        <option value="system">Match my system layout</option>
+        <option value="qwerty" id="stdOpt" selected>QWERTY</option>
+        <option value="system">System</option>
       </select>
     </label>
     <span class="opt best" id="bestBox" title="Fastest speed across all finished tests">Best <b id="best">–</b> wpm
@@ -384,7 +388,7 @@ window.FLT_WORDS = "aback abacus abandon abate abated abates abating abbey abbey
   var DEFAULT_WPM = 35;
 
   // ---- languages ----
-  // freq: the order letters unlock in; std: how the "Standard" keyboard setting reads the physical keys
+  // freq: the order letters unlock in; std: the layout the keyboard setting reads the physical keys as
   var RU_KEYS = { Backquote: "ё", KeyQ: "й", KeyW: "ц", KeyE: "у", KeyR: "к", KeyT: "е", KeyY: "н", KeyU: "г", KeyI: "ш",
     KeyO: "щ", KeyP: "з", BracketLeft: "х", BracketRight: "ъ", KeyA: "ф", KeyS: "ы", KeyD: "в", KeyF: "а", KeyG: "п",
     KeyH: "р", KeyJ: "о", KeyK: "л", KeyL: "д", Semicolon: "ж", Quote: "э", KeyZ: "я", KeyX: "ч", KeyC: "с", KeyV: "м",
@@ -393,6 +397,13 @@ window.FLT_WORDS = "aback abacus abandon abate abated abates abating abbey abbey
   var UK_KEYS = {};
   for (var rk in RU_KEYS) if (rk !== "Backquote") UK_KEYS[rk] = RU_KEYS[rk];
   UK_KEYS.KeyS = "і"; UK_KEYS.BracketRight = "ї"; UK_KEYS.Quote = "є"; UK_KEYS.Backslash = "ґ"; UK_KEYS.IntlBackslash = "ґ";
+  // punctuation on ЙЦУКЕН: [without Shift, with Shift]; "." and "," share the key after ю, the rest are on the number row
+  var CYR_PUNCT = { Slash: [".", ","], Digit1: [null, "!"], Digit2: [null, '"'], Digit3: [null, "№"], Digit4: [null, ";"],
+    Digit5: [null, "%"], Digit6: [null, ":"], Digit7: [null, "?"], Digit8: [null, "*"], Digit9: [null, "("], Digit0: [null, ")"],
+    Minus: ["-", "_"], Equal: ["=", "+"] };
+  // which on-screen key (and whether Shift) types each punctuation mark used in the texts
+  var CYR_VKB_PUNCT = { ".": [".", 0], ",": [".", 1], "!": ["1", 1], '"': ["2", 1], ";": ["4", 1], ":": ["6", 1],
+    "?": ["7", 1], "(": ["9", 1], ")": ["0", 1], "-": ["-", 0] };
   var CYR_ONSETS = ("б в г д ж з к л м н п р с т ф х ц ч ш щ бл бр вл вр гл гр дв др жд зв зл зн зр кл кн кр кт " +
     "мл мн пл пр св ск сл см сн сп ст тв тр фл фр хв хл хр чт шк шл шт шв").split(" ");
   var LANGS = {
@@ -403,17 +414,17 @@ window.FLT_WORDS = "aback abacus abandon abate abated abates abating abbey abbey
     ru: { name: "Russian", native: "Русский", alphabet: "абвгдеёжзийклмнопрстуфхцчшщъыьэюя", freq: "оеаинтсрвлкмдпуяыьгзбчйхжшюцщэфъё",
           std: "ЙЦУКЕН", placeholder: "оеан", doubles: "бвджзклмнпрстфеио",
           words: (window.FLT_WORDS_RU || "").split(" "),
-          key: function (code) { return RU_KEYS[code] || null; },
+          key: function (code) { return RU_KEYS[code] || null; }, punct: CYR_PUNCT,
           vowels: "аеёиоуыэюя", onsets: CYR_ONSETS,
           codas: "б в г д ж з к л м н п р с т ф х ц ч ш щ й ст нт нк нд рт рк рд лк зд ль нь ть рь дь вь сь зь мь пь".split(" "),
-          vkb: ["ё1234567890-=", "йцукенгшщзхъ", "фывапролджэ", "ячсмитьбю"] },
+          vkb: ["ё1234567890-=", "йцукенгшщзхъ", "фывапролджэ", "ячсмитьбю."] },
     uk: { name: "Ukrainian", native: "Українська", alphabet: "абвгґдеєжзиіїйклмнопрстуфхцчшщьюя", freq: "оаниіетврдксумлпзябгьчйхцжшюїєщфґ",
           std: "ЙЦУКЕН", placeholder: "оани", doubles: "бвджзклмнпрстфцчш",
           words: (window.FLT_WORDS_UK || "").split(" "),
-          key: function (code) { return UK_KEYS[code] || null; },
+          key: function (code) { return UK_KEYS[code] || null; }, punct: CYR_PUNCT,
           vowels: "аеєиіїоуюя", onsets: CYR_ONSETS.concat(["ґ"]),
           codas: "б в г д ж з к л м н п р с т ф х ц ч ш щ й ст нт нк нд рт рк рд лк зд ль нь ть дь сь зь ць".split(" "),
-          vkb: ["'1234567890-=", "йцукенгшщзхї", "фівапролджєґ", "ячсмитьбю"] }
+          vkb: ["'1234567890-=", "йцукенгшщзхї", "фівапролджєґ", "ячсмитьбю."] }
   };
   var LANG_ORDER = ["en", "uk", "ru"];
   function L() { return LANGS[store.prog.lang] || LANGS.en; }
@@ -446,6 +457,7 @@ window.FLT_WORDS = "aback abacus abandon abate abated abates abating abbey abbey
   var targetIn = document.getElementById("target");
   var langSel = document.getElementById("lang");
   var drillsBox = document.getElementById("drills");
+  var punctBox = document.getElementById("punct");
   var vkbEl = document.getElementById("vkb");
   var meaningEl = document.getElementById("meaning");
   var wordOpt = document.getElementById("wordOpt");
@@ -485,7 +497,7 @@ window.FLT_WORDS = "aback abacus abandon abate abated abates abating abbey abbey
               lang: LANG_ORDER.indexOf(p.lang) >= 0 ? p.lang : "en",
               layout: p.layout === "system" ? "system" : "qwerty",
               wpm: {},
-              drills: p.drills === true, unlocked: {}, custom: {} } };
+              drills: p.drills === true, punct: p.punct === true, unlocked: {}, custom: {} } };
     var best = typeof s.best === "number" ? { en: s.best } : obj(s.best);            // older saves: one English best
     var wpm = typeof p.wpm === "number" ? { en: p.wpm, uk: p.wpm, ru: p.wpm } : obj(p.wpm);   // older saves: one target for every language
     var unlocked = typeof p.unlocked === "number" ? { en: p.unlocked } : obj(p.unlocked);
@@ -733,25 +745,63 @@ window.FLT_WORDS = "aback abacus abandon abate abated abates abating abbey abbey
   }
 
   function makeText() {
-    var out = "";
+    var list = [], len = 0, limit = store.prog.punct ? TARGET_CHARS - 12 : TARGET_CHARS;   // leave room for the marks
     lastWord = ""; letterUse = {}; pairUse = {};
     var forced = store.prog.mode === "custom" && store.prog.drills;   // the Drills box: drills only
     var drill = forced || autoDrill, words = !forced && (pool.length || pseudoOK);
     while (true) {
-      var remaining = TARGET_CHARS - out.length - (out ? 1 : 0);
+      var remaining = limit - len - (len ? 1 : 0);
       if (remaining < 2) break;
       var w = null;
       if (words && (!drill || Math.random() < 0.25)) w = nextWord(Math.min(7, remaining));   // drills still mix in some words
       if (!w && drill) w = drillWord(Math.min(5, remaining));
       if (!w) break;
-      out += (out ? " " : "") + w;
+      len += (len ? 1 : 0) + w.length;
+      list.push(w);
     }
-    return out;
+    return joinWords(list);
+  }
+
+  // Punctuation: sentences of 3 to 8 words, each starting with a capital and ending with . ? or !,
+  // with commas, the odd ; : or dash, and now and then a word or two in "quotes" or (brackets).
+  // Only marks the keyboard setting can type: on ЙЦУКЕН they come from the ю-row and number keys.
+  function joinWords(list) { return store.prog.punct ? punctuate(list) : list.join(" "); }
+  function punctuate(words) {
+    var out = [], i = 0;
+    var poss = store.prog.lang === "en" && letters.indexOf("s") >= 0;   // English possessives (cat's) when s is in play
+    while (i < words.length) {
+      var n = Math.min(words.length - i, 3 + Math.floor(Math.random() * 6));
+      if (words.length - i - n < 2) n = words.length - i;              // never leave a one-word sentence at the end
+      var s = words.slice(i, i + n); i += n;
+      s[0] = s[0].charAt(0).toUpperCase() + s[0].slice(1);
+      var from = -1, to = -1, strong = false;
+      if (n >= 3 && Math.random() < 0.14) {                            // quotes or brackets, never round the first word
+        from = 1 + Math.floor(Math.random() * (n - 1));
+        to = Math.min(n - 1, from + Math.floor(Math.random() * 2));
+        var q = Math.random() < 0.5 ? ['"', '"'] : ["(", ")"];
+        s[from] = q[0] + s[from]; s[to] += q[1];
+      }
+      for (var j = 0; j < n - 1; j++) {
+        if (from >= 0 && j >= from && j < to) continue;                 // nothing inside the quotes or brackets
+        var r = Math.random();
+        if (r < 0.14) s[j] += ",";
+        else if (r < 0.2 && !strong) { strong = true; s[j] += pick([";", ":", " -"]); }
+        else if (r < 0.23 && poss && (j < from || j > to) && !/s$/.test(s[j])) s[j] += "'s";
+      }
+      var e = Math.random();
+      s[n - 1] += e < 0.75 ? "." : e < 0.88 ? "?" : "!";
+      out.push(s.join(" "));
+    }
+    return out.join(" ");
   }
 
   function charFor(e) {
-    var c = layoutSel.value === "qwerty" ? L().key(e.code) : null;   // "Standard" reads the physical key
-    if (c) return e.shiftKey ? c.toUpperCase() : c;
+    if (layoutSel.value === "qwerty") {                                // QWERTY / ЙЦУКЕН setting: read the physical key
+      var c = L().key(e.code);
+      if (c) return e.shiftKey ? c.toUpperCase() : c;
+      var pm = L().punct && L().punct[e.code];                        // ЙЦУКЕН punctuation; English uses the system's own
+      if (pm && pm[e.shiftKey ? 1 : 0]) return pm[e.shiftKey ? 1 : 0];
+    }
     return e.key;
   }
 
@@ -798,22 +848,33 @@ window.FLT_WORDS = "aback abacus abandon abate abated abates abating abbey abbey
   // ---- on-screen keyboard (Russian and Ukrainian ЙЦУКЕН) ----
   // rows are indented like a real staggered keyboard
   var VKB_INDENT = [0, 20, 30, 50];
-  var vkbKeys = {}, vkbLit = null, vkbBuiltFor = "";
+  var VKB_LEFT = [6, 5, 5, 5];         // keys per row typed by the left hand
+  var vkbKeys = {}, vkbHand = {}, vkbShift = {}, vkbLit = [], vkbBuiltFor = "";
 
   function buildVkb() {
     var frag = document.createDocumentFragment();
-    vkbEl.textContent = ""; vkbKeys = {}; vkbLit = null;
+    vkbEl.textContent = ""; vkbKeys = {}; vkbHand = {}; vkbShift = {}; vkbLit = [];
+    function shiftKey(side) {
+      var el = document.createElement("div");
+      el.className = "vk shift" + (side === "R" ? " right" : "");
+      el.textContent = "Shift";
+      vkbShift[side] = el;
+      return el;
+    }
     L().vkb.forEach(function (keys, r) {
       var div = document.createElement("div");
       div.className = "vrow";
-      div.style.marginLeft = VKB_INDENT[r] + "px";
-      keys.split("").forEach(function (k) {
+      div.style.marginLeft = (r === 3 ? 0 : VKB_INDENT[r]) + "px";
+      if (r === 3) div.appendChild(shiftKey("L"));
+      keys.split("").forEach(function (k, i) {
         var el = document.createElement("div");
         el.className = "vk" + (k === "а" || k === "о" ? " bump" : "");   // home keys under the index fingers
         el.textContent = k;
         vkbKeys[k] = el;
+        vkbHand[k] = i < VKB_LEFT[r] ? "L" : "R";
         div.appendChild(el);
       });
+      if (r === 3) div.appendChild(shiftKey("R"));
       frag.appendChild(div);
     });
     var spaceRow = document.createElement("div");
@@ -833,16 +894,29 @@ window.FLT_WORDS = "aback abacus abandon abate abated abates abating abbey abbey
     vkbEl.hidden = !show;
     if (!show) return;
     if (vkbBuiltFor !== store.prog.lang) buildVkb();
-    for (var k in vkbKeys) vkbKeys[k].classList.toggle("dim", k !== " " && letters.indexOf(k) < 0);
+    var marks = {};
+    if (store.prog.punct) for (var m in CYR_VKB_PUNCT) marks[CYR_VKB_PUNCT[m][0]] = 1;
+    for (var k in vkbKeys) vkbKeys[k].classList.toggle("dim", k !== " " && letters.indexOf(k) < 0 && !marks[k]);
+    for (var s in vkbShift) vkbShift[s].classList.toggle("dim", !store.prog.punct);
+  }
+  function vkbFor(ch) {               // the key for a character, and whether it needs Shift
+    if (vkbKeys[ch]) return { key: ch, shift: false };
+    var low = ch.toLowerCase();
+    if (low !== ch && vkbKeys[low]) return { key: low, shift: true };
+    var pm = CYR_VKB_PUNCT[ch];
+    return pm ? { key: pm[0], shift: !!pm[1] } : null;
   }
 
   function lightVkb() {               // highlight the next key to press
     if (vkbEl.hidden) return;
-    var el = !finished && text ? vkbKeys[text[typed.length]] || null : null;
-    if (el === vkbLit) return;
-    if (vkbLit) vkbLit.classList.remove("next");
-    if (el) el.classList.add("next");
-    vkbLit = el;
+    var f = !finished && text && typed.length < text.length ? vkbFor(text[typed.length]) : null, lit = [];
+    if (f && vkbKeys[f.key]) {
+      lit.push(vkbKeys[f.key]);
+      if (f.shift) lit.push(vkbShift[vkbHand[f.key] === "L" ? "R" : "L"]);   // Shift with the other hand
+    }
+    vkbLit.forEach(function (el) { if (lit.indexOf(el) < 0) el.classList.remove("next"); });
+    lit.forEach(function (el) { el.classList.add("next"); });
+    vkbLit = lit;
   }
 
   function render() {
@@ -1030,8 +1104,9 @@ window.FLT_WORDS = "aback abacus abandon abate abated abates abating abbey abbey
     modeSel.value = store.prog.mode;
     langSel.value = store.prog.lang;
     drillsBox.checked = !!store.prog.drills;
+    punctBox.checked = !!store.prog.punct;
     layoutSel.value = store.prog.layout;
-    stdOpt.textContent = "Standard (" + L().std + ")";
+    stdOpt.textContent = L().std;
     input.placeholder = L().placeholder;
     box.lang = store.prog.lang;
     progPanel.hidden = !prog;
@@ -1100,7 +1175,7 @@ window.FLT_WORDS = "aback abacus abandon abate abated abates abating abbey abbey
       current = nextVocab();
       var reps = [];
       for (var r = 0; r < WORD_REPEATS; r++) reps.push(current.word);
-      text = reps.join(" ");
+      text = joinWords(reps);
     } else text = makeText();
     typed = [];
     keystrokes = 0; mistakes = 0;
@@ -1157,6 +1232,13 @@ window.FLT_WORDS = "aback abacus abandon abate abated abates abating abbey abbey
     store.prog.drills = drillsBox.checked;
     saveStore();
     if (letters.length) { applyMode(); newText(); }
+  });
+  punctBox.addEventListener("change", function () {
+    punctBox.blur();
+    store.prog.punct = punctBox.checked;
+    saveStore();
+    setupVkb();
+    if (letters.length) newText();
   });
   modeSel.addEventListener("change", function () {
     modeSel.blur();
@@ -1296,7 +1378,7 @@ window.FLT_WORDS = "aback abacus abandon abate abated abates abating abbey abbey
         hinted = true;
         msg.className = "";
         msg.textContent = "Your keyboard is typing " + other.name + " letters. Switch Language to " +
-          other.native + ", or set Keyboard to Standard.";
+          other.native + ", or set Keyboard to " + L().std + ".";
       }
     }
     if (typed.length >= text.length) return;
@@ -1310,7 +1392,7 @@ window.FLT_WORDS = "aback abacus abandon abate abated abates abating abbey abbey
     var ok = ch === expected;
     keystrokes++;
     if (!ok) mistakes++;
-    if (expected !== " ") {
+    if (L().alphabet.indexOf(expected) >= 0) {
       var ks = testKeys[expected] || (testKeys[expected] = { time: 0, n: 0, ok: 0, err: 0, g: [], o: [] });
       ks.o.push(ok ? 1 : 0);
       if (!ok) ks.err++;
